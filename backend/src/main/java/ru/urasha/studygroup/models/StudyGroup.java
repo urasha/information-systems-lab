@@ -18,6 +18,9 @@ public class StudyGroup {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @Version
+    private Long version;
+
     @NotBlank
     private String name;
 

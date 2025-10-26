@@ -3,9 +3,9 @@ package ru.urasha.studygroup.dto;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public record ImportErrorsResponseDto(
+public record ErrorsResponseDto(
         LocalDateTime timestamp,
         String message,
-        List<ImportErrorDto> errors
+        List<ErrorDto> errors
 ) {
 }

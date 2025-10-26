@@ -1,5 +1,7 @@
 package ru.urasha.studygroup.repositories;
 
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import ru.urasha.studygroup.models.StudyGroup;
@@ -23,9 +25,15 @@ public interface StudyGroupRepository extends JpaRepository<StudyGroup, Integer>
     @Query("select distinct g.groupAdmin.name from StudyGroup g where g.groupAdmin.name is not null")
     List<String> findDistinctGroupAdminNames();
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select g from StudyGroup g where g.id = :id")
+    Optional<StudyGroup> findByIdForUpdate(@Param("id") Integer id);
+
     Optional<StudyGroup> findByCoordinates_XAndCoordinates_Y(Double x, Integer y);
 
     Optional<StudyGroup> findByGroupAdmin_PassportID(@Param("passport") String passport);
+
+    Optional<StudyGroup> findByNameIgnoreCase(String name);
 
     boolean existsByNameIgnoreCase(String name);
 }

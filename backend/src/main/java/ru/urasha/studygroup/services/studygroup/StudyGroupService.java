@@ -1,10 +1,11 @@
-package ru.urasha.studygroup.services;
+package ru.urasha.studygroup.services.studygroup;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import ru.urasha.studygroup.dto.StudyGroupDto;
 import ru.urasha.studygroup.events.StudyGroupChangedEvent;
@@ -12,17 +13,20 @@ import ru.urasha.studygroup.exceptions.StudyGroupNotFoundException;
 import ru.urasha.studygroup.mappers.StudyGroupMapper;
 import ru.urasha.studygroup.models.StudyGroup;
 import ru.urasha.studygroup.repositories.StudyGroupRepository;
+import ru.urasha.studygroup.services.UniqueConstraintService;
 
 import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class StudyGroupService {
 
     private final StudyGroupRepository repository;
     private final StudyGroupMapper studyGroupMapper;
     private final ApplicationEventPublisher eventPublisher;
     private final UniqueConstraintService uniqueConstraintService;
+    private final StudyGroupRetryService studyGroupRetryService;
 
     public Page<StudyGroup> getGroupPage(String nameContains, Pageable pageable) {
         return nameContains == null || nameContains.isBlank()
@@ -34,7 +38,7 @@ public class StudyGroupService {
         return repository.findById(id);
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public StudyGroup create(StudyGroupDto dto) {
         uniqueConstraintService.checkUniqueForCreate(dto);
 
@@ -49,28 +53,15 @@ public class StudyGroupService {
     }
 
     @Transactional
-    public StudyGroup update(Integer id, StudyGroupDto updatedGroupDto) throws StudyGroupNotFoundException {
-        StudyGroup existingGroup = repository.findById(id)
-                .orElseThrow(() -> new StudyGroupNotFoundException(id));
-
-        uniqueConstraintService.checkUniqueForUpdate(id, updatedGroupDto);
-
-        studyGroupMapper.updateEntityFromDto(updatedGroupDto, existingGroup);
-        StudyGroup saved = repository.save(existingGroup);
-
-        eventPublisher.publishEvent(
-                new StudyGroupChangedEvent(saved.getId(), StudyGroupChangedEvent.EventType.UPDATED)
-        );
-
-        return saved;
-    }
-
-    @Transactional
     public void delete(Integer id) {
         repository.deleteById(id);
 
         eventPublisher.publishEvent(
                 new StudyGroupChangedEvent(id, StudyGroupChangedEvent.EventType.DELETED)
         );
+    }
+
+    public StudyGroup update(Integer id, StudyGroupDto updatedGroupDto) throws StudyGroupNotFoundException {
+        return studyGroupRetryService.updateWithRetry(id, updatedGroupDto);
     }
 }

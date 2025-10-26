@@ -2,7 +2,8 @@ package ru.urasha.studygroup.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.urasha.studygroup.dto.ImportErrorDto;
+import org.springframework.transaction.annotation.Transactional;
+import ru.urasha.studygroup.dto.ErrorDto;
 import ru.urasha.studygroup.dto.StudyGroupDto;
 import ru.urasha.studygroup.exceptions.UniqueConstraintException;
 import ru.urasha.studygroup.models.StudyGroup;
@@ -14,15 +15,16 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class UniqueConstraintService {
 
     private final StudyGroupRepository groupRepository;
 
     public void checkUniqueForCreate(StudyGroupDto dto) {
-        List<ImportErrorDto> errors = new ArrayList<>();
+        List<ErrorDto> errors = new ArrayList<>();
 
         if (dto.getName() != null && groupRepository.existsByNameIgnoreCase(dto.getName())) {
-            errors.add(new ImportErrorDto(-1, "name", "Group name must be unique"));
+            errors.add(new ErrorDto(-1, "name", "Group name must be unique"));
         }
 
         if (dto.getCoordinates() != null) {
@@ -30,7 +32,7 @@ public class UniqueConstraintService {
             Integer y = dto.getCoordinates().getY();
             Optional<StudyGroup> existing = groupRepository.findByCoordinates_XAndCoordinates_Y(x, y);
             if (existing.isPresent()) {
-                errors.add(new ImportErrorDto(-1, "coordinates", "Coordinates (x,y) must be unique"));
+                errors.add(new ErrorDto(-1, "coordinates", "Coordinates (x,y) must be unique"));
             }
         }
 
@@ -38,7 +40,7 @@ public class UniqueConstraintService {
             String passport = dto.getGroupAdmin().getPassportID();
             Optional<StudyGroup> existing = groupRepository.findByGroupAdmin_PassportID(passport);
             if (existing.isPresent()) {
-                errors.add(new ImportErrorDto(-1, "groupAdmin.passportID", "passportID must be unique among group admins"));
+                errors.add(new ErrorDto(-1, "groupAdmin.passportID", "passportID must be unique among group admins"));
             }
         }
 
@@ -48,16 +50,12 @@ public class UniqueConstraintService {
     }
 
     public void checkUniqueForUpdate(Integer id, StudyGroupDto dto) {
-        List<ImportErrorDto> errors = new ArrayList<>();
+        List<ErrorDto> errors = new ArrayList<>();
 
         if (dto.getName() != null) {
-            Optional<StudyGroup> byName = groupRepository.findAll().stream()
-                    .filter(g -> g.getName() != null && g.getName().equalsIgnoreCase(dto.getName()))
-                    .filter(g -> !g.getId().equals(id))
-                    .findFirst();
-
-            if (byName.isPresent()) {
-                errors.add(new ImportErrorDto(-1, "name", "Group name must be unique"));
+            Optional<StudyGroup> byName = groupRepository.findByNameIgnoreCase(dto.getName());
+            if (byName.isPresent() && !byName.get().getId().equals(id)) {
+                errors.add(new ErrorDto(-1, "name", "Group name must be unique"));
             }
         }
 
@@ -66,7 +64,7 @@ public class UniqueConstraintService {
             Integer y = dto.getCoordinates().getY();
             Optional<StudyGroup> existing = groupRepository.findByCoordinates_XAndCoordinates_Y(x, y);
             if (existing.isPresent() && !existing.get().getId().equals(id)) {
-                errors.add(new ImportErrorDto(-1, "coordinates", "Coordinates (x,y) must be unique"));
+                errors.add(new ErrorDto(-1, "coordinates", "Coordinates (x,y) must be unique"));
             }
         }
 
@@ -74,7 +72,7 @@ public class UniqueConstraintService {
             String passport = dto.getGroupAdmin().getPassportID();
             Optional<StudyGroup> existing = groupRepository.findByGroupAdmin_PassportID(passport);
             if (existing.isPresent() && !existing.get().getId().equals(id)) {
-                errors.add(new ImportErrorDto(-1, "groupAdmin.passportID", "passportID must be unique among group admins"));
+                errors.add(new ErrorDto(-1, "groupAdmin.passportID", "passportID must be unique among group admins"));
             }
         }
 
@@ -82,4 +80,5 @@ public class UniqueConstraintService {
             throw new UniqueConstraintException(errors);
         }
     }
+
 }

@@ -15,10 +15,19 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class SpecialOpsService {
 
     private final StudyGroupRepository studyGroupRepository;
     private final ApplicationEventPublisher eventPublisher;
+
+    public List<StudyGroup> searchByName(String substring) {
+        return studyGroupRepository.findByNameContainingIgnoreCase(substring);
+    }
+
+    public List<String> getUniqueAdminNames() {
+        return studyGroupRepository.findDistinctGroupAdminNames();
+    }
 
     @Transactional
     public void deleteByAdminName(String adminName) {
@@ -37,19 +46,9 @@ public class SpecialOpsService {
         }
     }
 
-    @Transactional(readOnly = true)
-    public List<StudyGroup> searchByName(String substring) {
-        return studyGroupRepository.findByNameContainingIgnoreCase(substring);
-    }
-
-    @Transactional(readOnly = true)
-    public List<String> getUniqueAdminNames() {
-        return studyGroupRepository.findDistinctGroupAdminNames();
-    }
-
     @Transactional
     public StudyGroup expelAllStudents(Integer groupId) {
-        StudyGroup group = studyGroupRepository.findById(groupId)
+        StudyGroup group = studyGroupRepository.findByIdForUpdate(groupId)
                 .orElseThrow(() -> new StudyGroupNotFoundException(groupId));
 
         long expelledCount = group.getStudentsCount();
@@ -71,20 +70,25 @@ public class SpecialOpsService {
             throw new SameSourceAndTargetGroupException();
         }
 
-        StudyGroup sourceGroup = studyGroupRepository.findById(fromGroupId)
-                .orElseThrow(() -> new StudyGroupNotFoundException(fromGroupId));
+        Integer firstLockId = Math.min(fromGroupId, toGroupId);
+        Integer secondLockId = Math.max(fromGroupId, toGroupId);
 
-        StudyGroup targetGroup = studyGroupRepository.findById(toGroupId)
-                .orElseThrow(() -> new StudyGroupNotFoundException(toGroupId));
+        StudyGroup first = studyGroupRepository.findByIdForUpdate(firstLockId)
+                .orElseThrow(() -> new StudyGroupNotFoundException(firstLockId));
+        StudyGroup second = studyGroupRepository.findByIdForUpdate(secondLockId)
+                .orElseThrow(() -> new StudyGroupNotFoundException(secondLockId));
 
-        int studentsToTransfer = sourceGroup.getStudentsCount();
+        StudyGroup source = fromGroupId.equals(firstLockId) ? first : second;
+        StudyGroup target = toGroupId.equals(firstLockId) ? first : second;
 
-        targetGroup.setStudentsCount(targetGroup.getStudentsCount() + studentsToTransfer);
-        sourceGroup.setTransferredStudents(sourceGroup.getTransferredStudents() + studentsToTransfer);
-        sourceGroup.setStudentsCount(0);
+        int studentsToTransfer = source.getStudentsCount();
 
-        StudyGroup savedSourceGroup = studyGroupRepository.save(sourceGroup);
-        StudyGroup savedTargetGroup = studyGroupRepository.save(targetGroup);
+        target.setStudentsCount(target.getStudentsCount() + studentsToTransfer);
+        source.setTransferredStudents(source.getTransferredStudents() + studentsToTransfer);
+        source.setStudentsCount(0);
+
+        StudyGroup savedSourceGroup = studyGroupRepository.save(source);
+        StudyGroup savedTargetGroup = studyGroupRepository.save(target);
 
         eventPublisher.publishEvent(
                 new StudyGroupChangedEvent(savedSourceGroup.getId(), StudyGroupChangedEvent.EventType.UPDATED)
