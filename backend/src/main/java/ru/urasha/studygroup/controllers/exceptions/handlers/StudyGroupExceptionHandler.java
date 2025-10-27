@@ -8,6 +8,7 @@ import ru.urasha.studygroup.controllers.StudyGroupController;
 import ru.urasha.studygroup.dto.DefaultErrorResponseDto;
 import ru.urasha.studygroup.dto.ErrorsResponseDto;
 import ru.urasha.studygroup.exceptions.OptimisticLockException;
+import ru.urasha.studygroup.exceptions.SerializableCreateException;
 import ru.urasha.studygroup.exceptions.StudyGroupException;
 import ru.urasha.studygroup.exceptions.UniqueConstraintException;
 
@@ -37,6 +38,15 @@ public class StudyGroupExceptionHandler {
 
     @ExceptionHandler(OptimisticLockException.class)
     public ResponseEntity<DefaultErrorResponseDto> handleOptimisticLock(OptimisticLockException exception) {
+        DefaultErrorResponseDto body = new DefaultErrorResponseDto(
+                LocalDateTime.now(),
+                exception.getMessage()
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+    }
+
+    @ExceptionHandler(SerializableCreateException.class)
+    public ResponseEntity<DefaultErrorResponseDto> handleOptimisticLock(SerializableCreateException exception) {
         DefaultErrorResponseDto body = new DefaultErrorResponseDto(
                 LocalDateTime.now(),
                 exception.getMessage()

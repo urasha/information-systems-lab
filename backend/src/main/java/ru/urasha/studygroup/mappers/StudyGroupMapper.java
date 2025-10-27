@@ -9,11 +9,15 @@ public interface StudyGroupMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "creationDate", ignore = true)
+    @Mapping(target = "coordinates.id", ignore = true)
+    @Mapping(target = "groupAdmin.id", ignore = true)
+    @Mapping(target = "groupAdmin.location.id", ignore = true)
     StudyGroup toEntity(StudyGroupDto dto);
-
-    StudyGroupDto toDto(StudyGroup entity);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "creationDate", ignore = true)
+    @Mapping(target = "coordinates.id", ignore = true)
+    @Mapping(target = "groupAdmin.id", ignore = true)
+    @Mapping(target = "groupAdmin.location.id", ignore = true)
     void updateEntityFromDto(StudyGroupDto dto, @MappingTarget StudyGroup entity);
 }
