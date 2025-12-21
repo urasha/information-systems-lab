@@ -1,10 +1,14 @@
 name: CI/CD Pipeline
 
 on:
-  push:
+  pull_request:
     branches:
       - feature
-  pull_request:
+      - master
+    push:
+      branches:
+        - feature
+        - master
 
 jobs:
   build-and-test:

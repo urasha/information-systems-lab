@@ -5,6 +5,14 @@ import CreateEditDialog from '../components/CreateEditDialog.vue';
 import GroupViewModal from "../components/GroupViewModal.vue";
 import SpecialOpsModal from '../components/SpecialOpsModal.vue'
 import {createWebSocket} from '../services/websocket';
+import ImportUploadModal from '../components/ImportUploadModal.vue';
+import ImportHistoryModal from '../components/ImportHistoryModal.vue';
+
+const showImportModal = ref(false);
+const showImportHistory = ref(false);
+
+const currentUser = ref(localStorage.getItem('app.user') || 'alice');
+const currentRole = ref(localStorage.getItem('app.role') || 'ADMIN');
 
 const groups = ref([]);
 const page = ref(0);
@@ -245,6 +253,8 @@ function toggleFilter(col, event) {
 
     <button class="create-btn" @click="openCreateDialog">Create New Group</button>
     <button class="special-btn" @click="showSpecial = true">Special Ops</button>
+    <button class="import-btn" @click="showImportModal = true">Import</button>
+    <button class="history-btn" @click="showImportHistory = true">Import History</button>
 
     <CreateEditDialog
         v-if="showDialog"
@@ -265,6 +275,22 @@ function toggleFilter(col, event) {
         @close="showSpecial = false"
         @done="fetchGroups(); showSpecial=false"
     />
+
+    <ImportUploadModal
+        v-if="showImportModal"
+        :currentUser="currentUser"
+        :currentRole="currentRole"
+        @close="showImportModal = false"
+        @done="fetchGroups(); showImportModal = false"
+    />
+
+    <ImportHistoryModal
+        v-if="showImportHistory"
+        :currentUser="currentUser"
+        :currentRole="currentRole"
+        @close="showImportHistory = false"
+    />
+
   </div>
 </template>
 
@@ -401,5 +427,25 @@ button:disabled {
   align-items: center;
   gap: 0.5rem;
   margin-bottom: 1rem;
+}
+
+.import-btn {
+  background: #6a1b9a;
+  color: white;
+  margin-left: 8px;
+}
+
+.import-btn:hover {
+  background: #5e35b1;
+}
+
+.history-btn {
+  background: #455a64;
+  color: white;
+  margin-left: 8px;
+}
+
+.history-btn:hover {
+  background: #37474f;
 }
 </style>

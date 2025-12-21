@@ -5,7 +5,7 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD}
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create-drop
     show-sql: true
   messages:
     basename: messages
@@ -13,4 +13,4 @@ spring:
     locale: en
     locale-resolver: fixed
 server:
-  port: 8081
+  port: 8082

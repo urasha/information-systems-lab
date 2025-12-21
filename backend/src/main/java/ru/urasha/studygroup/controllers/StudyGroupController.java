@@ -10,7 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.urasha.studygroup.dto.StudyGroupDto;
 import ru.urasha.studygroup.models.StudyGroup;
-import ru.urasha.studygroup.services.StudyGroupService;
+import ru.urasha.studygroup.services.studygroup.StudyGroupService;
 
 
 @RestController

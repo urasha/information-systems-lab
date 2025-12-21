@@ -47,4 +47,9 @@ out/
 ##############################
 .DS_Store
 
+# Custom
 .env
+
+generate-from-openapi.ps1
+
+*.json

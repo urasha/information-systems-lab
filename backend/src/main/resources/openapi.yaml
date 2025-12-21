@@ -1,0 +1,414 @@
+openapi: 3.0.3
+info:
+  title: StudyGroups API
+  version: "1.0.0"
+  description: API for Study Groups management (groups, persons, coordinates, special ops)
+
+servers:
+  - url: /api
+    description: Local (relative) API base path
+
+paths:
+  /groups:
+    get:
+      summary: List groups (paged)
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: sort
+          in: query
+          schema:
+            type: string
+            default: id
+        - name: asc
+          in: query
+          schema:
+            type: boolean
+            default: true
+        - name: nameContains
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: paged groups
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedStudyGroup'
+    post:
+      summary: Create group
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudyGroupDto'
+      responses:
+        '200':
+          description: created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudyGroup'
+        '400':
+          description: validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /groups/{id}:
+    get:
+      summary: Get group by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudyGroup'
+        '404':
+          description: not found
+    put:
+      summary: Update group
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudyGroupDto'
+      responses:
+        '200':
+          description: updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudyGroup'
+        '400':
+          description: validation error
+        '404':
+          description: not found
+    delete:
+      summary: Delete group
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: deleted
+        '404':
+          description: not found
+
+  /persons:
+    get:
+      summary: List persons
+      responses:
+        '200':
+          description: list of persons
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Person'
+
+  /coordinates:
+    get:
+      summary: List coordinates
+      responses:
+        '200':
+          description: list of coordinates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Coordinates'
+
+  # --- Special operations under /groups/special (matches SpecialOpsController) ---
+  /groups/special/by-admin:
+    delete:
+      summary: Delete all groups that have groupAdmin.name == adminName
+      parameters:
+        - name: adminName
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: deleted
+
+  /groups/special/search:
+    get:
+      summary: Search groups by name substring
+      parameters:
+        - name: substring
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: list of matching groups
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StudyGroup'
+
+  /groups/special/unique-admins:
+    get:
+      summary: Unique admin names across groups
+      responses:
+        '200':
+          description: unique admin names
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+
+  /groups/special/{groupId}/expel:
+    post:
+      summary: Expel all students in a group
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: updated group
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudyGroup'
+        '404':
+          description: not found
+
+  /groups/special/transfer:
+    post:
+      summary: Transfer all students from one group to another
+      parameters:
+        - name: fromId
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: toId
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  from:
+                    $ref: '#/components/schemas/StudyGroup'
+                  to:
+                    $ref: '#/components/schemas/StudyGroup'
+        '400':
+          description: bad request
+        '404':
+          description: not found
+
+components:
+  schemas:
+    StudyGroup:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        studentsCount:
+          type: integer
+          minimum: 0
+        expelledStudents:
+          type: integer
+          minimum: 0
+        transferredStudents:
+          type: integer
+          minimum: 0
+        shouldBeExpelled:
+          type: integer
+          minimum: 0
+        averageMark:
+          type: number
+          format: double
+        formOfEducation:
+          $ref: '#/components/schemas/FormOfEducation'
+        semesterEnum:
+          $ref: '#/components/schemas/Semester'
+        creationDate:
+          type: string
+          format: date
+        coordinates:
+          $ref: '#/components/schemas/Coordinates'
+        groupAdmin:
+          $ref: '#/components/schemas/Person'
+
+    StudyGroupDto:
+      type: object
+      required:
+        - name
+        - coordinates
+        - shouldBeExpelled
+        - semesterEnum
+        - groupAdmin
+      properties:
+        name:
+          type: string
+        coordinates:
+          $ref: '#/components/schemas/Coordinates'
+        studentsCount:
+          type: integer
+          minimum: 0
+        expelledStudents:
+          type: integer
+          minimum: 0
+        transferredStudents:
+          type: integer
+          minimum: 0
+        shouldBeExpelled:
+          type: integer
+          minimum: 0
+        averageMark:
+          type: number
+        formOfEducation:
+          $ref: '#/components/schemas/FormOfEducation'
+        semesterEnum:
+          $ref: '#/components/schemas/Semester'
+        groupAdmin:
+          $ref: '#/components/schemas/Person'
+
+    Person:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        eyeColor:
+          $ref: '#/components/schemas/Color'
+        hairColor:
+          $ref: '#/components/schemas/Color'
+        location:
+          $ref: '#/components/schemas/Location'
+        passportID:
+          type: string
+        nationality:
+          $ref: '#/components/schemas/Country'
+
+    Coordinates:
+      type: object
+      properties:
+        id:
+          type: integer
+        x:
+          type: number
+          format: double
+        y:
+          type: number
+          format: double
+
+    Location:
+      type: object
+      properties:
+        id:
+          type: integer
+        x:
+          type: number
+          format: float
+        y:
+          type: number
+        z:
+          type: number
+          format: float
+
+    FormOfEducation:
+      type: string
+      enum:
+        - DISTANCE_EDUCATION
+        - FULL_TIME_EDUCATION
+        - EVENING_CLASSES
+
+    Semester:
+      type: string
+      enum:
+        - SECOND
+        - SIXTH
+        - SEVENTH
+        - EIGHTH
+
+    Color:
+      type: string
+      enum:
+        - BLACK
+        - BLUE
+        - WHITE
+        - BROWN
+
+    Country:
+      type: string
+      enum:
+        - USA
+        - FRANCE
+        - ITALY
+        - JAPAN
+
+    PagedStudyGroup:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/StudyGroup'
+        number:
+          type: integer
+        totalPages:
+          type: integer
+        totalElements:
+          type: integer
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        fieldErrors:
+          type: object
+          additionalProperties:
+            type: string
