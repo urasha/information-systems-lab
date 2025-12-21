@@ -1,10 +1,26 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
     driver-class-name: org.h2.Driver
     username: sa
     password:
+    type: org.apache.commons.dbcp2.BasicDataSource
+    dbcp2:
+      max-total: 5
+      max-idle: 3
+      min-idle: 1
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        cache:
+          use_second_level_cache: false
+          use_query_cache: false
+        generate_statistics: false
+    show-sql: false
+  main:
+    allow-bean-definition-overriding: true
+
+minio:
+  enabled: false
