@@ -6,11 +6,15 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 @Setter
 @Getter
 @Entity
 @Table(name = "person")
+@Cacheable
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "person")
 public class Person {
 
     @Id

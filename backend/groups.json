@@ -1,0 +1,21 @@
+[
+  {
+    "name": "Group A",
+    "coordinates": { "x": 12.3, "y": 100 },
+    "studentsCount": 10,
+    "expelledStudents": 1,
+    "transferredStudents": 2,
+    "formOfEducation": "FULL_TIME_EDUCATION",
+    "shouldBeExpelled": 5,
+    "averageMark": 4.5,
+    "semesterEnum": "SECOND",
+    "groupAdmin": {
+      "name": "Admin A",
+      "eyeColor": "BLUE",
+      "hairColor": "BROWN",
+      "location": { "x": 1.1, "y": 2, "z": 3.3 },
+      "passportID": "ABCD1234",
+      "nationality": "USA"
+    }
+  }
+]

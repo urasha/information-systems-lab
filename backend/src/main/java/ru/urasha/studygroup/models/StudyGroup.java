@@ -5,6 +5,8 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 import java.time.LocalDate;
 
@@ -12,6 +14,8 @@ import java.time.LocalDate;
 @Setter
 @Entity
 @Table(name = "study_group")
+@Cacheable
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "study_group")
 public class StudyGroup {
 
     @Id
