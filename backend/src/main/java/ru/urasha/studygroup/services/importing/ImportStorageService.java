@@ -12,11 +12,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import ru.urasha.studygroup.config.MinioProperties;
+import ru.urasha.studygroup.dto.ErrorDto;
+import ru.urasha.studygroup.exceptions.ImportException;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -46,7 +49,9 @@ public class ImportStorageService {
             );
         } catch (Exception ex) {
             log.error("Failed to upload file to MinIO: {}", ex.getMessage());
-            throw new RuntimeException("Failed to store import file in MinIO", ex);
+            throw new ImportException(java.util.List.of(
+                    new ErrorDto(-1, "file", "Хранилище файлов недоступно (MinIO)")
+            ));
         }
 
         registerRollbackCleanup(objectKey);
