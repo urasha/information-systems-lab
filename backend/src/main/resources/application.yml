@@ -1,12 +1,35 @@
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL}
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5434/studs}
+    username: ${SPRING_DATASOURCE_USERNAME:studs}
+    password: ${SPRING_DATASOURCE_PASSWORD:studs}
+    driver-class-name: org.postgresql.Driver
+    type: org.apache.commons.dbcp2.BasicDataSource
+    dbcp2:
+      initial-size: ${DBCP2_INITIAL_SIZE:5}
+      max-total: ${DBCP2_MAX_TOTAL:20}
+      max-idle: ${DBCP2_MAX_IDLE:10}
+      min-idle: ${DBCP2_MIN_IDLE:5}
+      max-wait-millis: ${DBCP2_MAX_WAIT:10000}
+      validation-query: SELECT 1
+      test-on-borrow: true
+      test-while-idle: true
+      time-between-eviction-runs-millis: 30000
+      min-evictable-idle-time-millis: 60000
   jpa:
     hibernate:
       ddl-auto: create-drop
     show-sql: true
+    properties:
+      hibernate:
+        cache:
+          use_second_level_cache: true
+          use_query_cache: true
+          region.factory_class: org.infinispan.hibernate.cache.v62.InfinispanRegionFactory
+          infinispan:
+            cfg: infinispan.xml
+            statistics: true
+        generate_statistics: true
   messages:
     basename: messages
   web:
@@ -14,3 +37,17 @@ spring:
     locale-resolver: fixed
 server:
   port: 8082
+
+app:
+  cache:
+    stats-logging-enabled: ${CACHE_STATS_LOGGING:false}
+    stats-log-threshold: ${CACHE_STATS_THRESHOLD:0}
+
+minio:
+  enabled: true
+  endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+  region: ${MINIO_REGION:us-east-1}
+  bucket: ${MINIO_BUCKET:imports}
+  access-key: ${MINIO_ACCESS_KEY:minio}
+  secret-key: ${MINIO_SECRET_KEY:minio123}
+  secure: ${MINIO_SECURE:false}

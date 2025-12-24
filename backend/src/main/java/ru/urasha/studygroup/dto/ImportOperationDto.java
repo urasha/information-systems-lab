@@ -9,6 +9,10 @@ public record ImportOperationDto(
         Integer importedCount,
         String errorMessage,
         LocalDateTime createdAt,
-        LocalDateTime finishedAt
+        LocalDateTime finishedAt,
+        String originalFilename,
+        Long fileSize,
+        String contentType,
+        String objectKey
 ) {
 }

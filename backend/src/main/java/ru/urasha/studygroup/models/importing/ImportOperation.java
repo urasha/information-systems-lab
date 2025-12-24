@@ -2,12 +2,16 @@ package ru.urasha.studygroup.models.importing;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
 @Entity
 @Table(name = "import_operation")
+@Cacheable
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "import_operation")
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -23,6 +27,15 @@ public class ImportOperation {
     private String username;
 
     private String role;
+
+    private String originalFilename;
+
+    private String contentType;
+
+    private Long fileSize;
+
+    @Column(length = 512)
+    private String objectKey;
 
     private Integer importedCount;
 

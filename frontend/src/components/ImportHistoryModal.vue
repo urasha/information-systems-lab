@@ -11,6 +11,7 @@ const emit = defineEmits(['close']);
 const operations = ref([]);
 const loading = ref(false);
 const loadError = ref('');
+const downloadError = ref('');
 
 async function fetchHistory() {
   loading.value = true;
@@ -28,6 +29,34 @@ async function fetchHistory() {
     operations.value = [];
   } finally {
     loading.value = false;
+  }
+}
+
+async function downloadFile(op) {
+  downloadError.value = '';
+  if (!op.objectKey) {
+    downloadError.value = 'File not available for this import';
+    return;
+  }
+
+  try {
+    const res = await api.get(`/imports/${op.id}/file`, {
+      headers: {
+        'X-User': props.currentUser,
+        'X-Role': props.currentRole
+      },
+      responseType: 'blob'
+    });
+
+    const blob = new Blob([res.data], {type: res.headers['content-type'] || 'application/octet-stream'});
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = op.originalFilename || `import-${op.id}.json`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    downloadError.value = err.response?.data?.message || err.message;
   }
 }
 
@@ -61,6 +90,10 @@ function formatDate(d) {
         <strong>Error:</strong> {{ loadError }}
       </div>
 
+      <div v-if="downloadError" class="error-block">
+        <strong>Download error:</strong> {{ downloadError }}
+      </div>
+
       <table class="history-table" v-if="operations.length">
         <thead>
         <tr>
@@ -71,6 +104,7 @@ function formatDate(d) {
           <th>error</th>
           <th>createdAt</th>
           <th>finishedAt</th>
+          <th>file</th>
         </tr>
         </thead>
         <tbody>
@@ -82,6 +116,12 @@ function formatDate(d) {
           <td class="err-cell">{{ op.errorMessage ?? '—' }}</td>
           <td>{{ formatDate(op.createdAt) }}</td>
           <td>{{ formatDate(op.finishedAt) }}</td>
+          <td>
+            <button @click="downloadFile(op)" :disabled="!op.objectKey">Download</button>
+            <div class="file-meta" v-if="op.originalFilename">
+              <small>{{ op.originalFilename }}</small>
+            </div>
+          </td>
         </tr>
         </tbody>
       </table>

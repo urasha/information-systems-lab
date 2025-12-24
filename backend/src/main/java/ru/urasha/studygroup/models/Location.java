@@ -4,11 +4,15 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 @Setter
 @Getter
 @Entity
 @Table(name = "location")
+@Cacheable
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "location")
 public class Location {
 
     @Id

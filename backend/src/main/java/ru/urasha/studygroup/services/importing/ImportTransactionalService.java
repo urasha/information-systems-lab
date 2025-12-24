@@ -40,6 +40,7 @@ public class ImportTransactionalService {
     private final ObjectMapper objectMapper;
     private final ImportValidator importValidator;
     private final ImportOperationService operationService;
+    private final ImportStorageService storageService;
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public ImportResultDto importFromFileTransactional(MultipartFile file, String username, String role) {
@@ -50,12 +51,31 @@ public class ImportTransactionalService {
         }
 
         String filename = file.getOriginalFilename() == null ? "unknown" : file.getOriginalFilename();
+        String contentType = file.getContentType();
 
-        var operation = operationService.createRunningOperation(username, role);
+        byte[] content;
+        try {
+            content = file.getBytes();
+        } catch (IOException ioException) {
+            throw new ImportException(Collections.singletonList(
+                    new ErrorDto(-1, "file", "Cannot read file")
+            ));
+        }
+
+        var operation = operationService.createRunningOperation(
+                username,
+                role,
+                filename,
+                contentType,
+                (long) content.length
+        );
         Long opId = operation.getId();
 
         try {
-            List<StudyGroupDto> dtos = parseDtos(file, filename);
+            String objectKey = storageService.storeImportFile(opId, filename, contentType, content);
+            operationService.attachObjectKey(opId, objectKey);
+
+            List<StudyGroupDto> dtos = parseDtos(content, filename);
 
             List<ErrorDto> validationErrors = importValidator.validateAll(dtos);
 
@@ -100,13 +120,10 @@ public class ImportTransactionalService {
         }
     }
 
-    private List<StudyGroupDto> parseDtos(MultipartFile file, String filename) {
+    private List<StudyGroupDto> parseDtos(byte[] content, String filename) {
         try {
-            return objectMapper.readValue(
-                    file.getInputStream(),
-                    new TypeReference<>() {
-                    }
-            );
+            return objectMapper.readValue(content, new TypeReference<>() {
+            });
         } catch (JsonParseException jpe) {
             log.warn("Invalid JSON structure in file '{}': {}", filename, jpe.getOriginalMessage());
             throw new ImportException(Collections.singletonList(
